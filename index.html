@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+    @media print {
+        canvas {
+            display: none;
+        }
+    }
+    .line {
+        fill: none;
+        stroke: #0004ff;
+        stroke-width: 3;
+    }
+    .dot {
+        fill: #5456fc;
+        stroke: #fff;
+    }
+  
+   .focus circle {
+        fill: none;
+        stroke: steelblue;
+    }
+    .output {
+        display: flex;
+    }
+    </style>
+</head>
+<body>
+    
+    <div id="info">
+        <label for="currentTest">Current Test:</label>
+        <span id="currentTest">NONE</span>
+    </div>
+    <button id="start">Start</button>
+    <hr>
+    <div class="output">
+        <canvas id="game"></canvas>
+        <div id="graph"></div>
+    </div>
+
+    <script src="build/dist/excalibur-benchmark.js"></script>
+</body>
+</html>
