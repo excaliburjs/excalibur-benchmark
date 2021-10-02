@@ -41,8 +41,8 @@ const runner = new Runner({
     samplers: [new ExcaliburFpsSampler(game)],
     tests: [
         new Test({
-            name: '100 Actors (no sprites, no collisions)',
-            duration: 5_000,
+            name: '100 Actors (no collisions)',
+            duration: 10_000,
             setup: () => {
                 generateActors(100);
                 return Promise.resolve();
@@ -55,7 +55,7 @@ const runner = new Runner({
             }
         }),
         new Test({
-            name: '1000 Actors (no sprites, no collisions)',
+            name: '1000 Actors (no collisions)',
             duration: 10_000,
             setup: () => {
                 generateActors(1000);
@@ -69,7 +69,7 @@ const runner = new Runner({
             }
         }),
         new Test({
-            name: '2000 Actors (no sprites, no collisions)',
+            name: '2000 Actors (no collisions)',
             duration: 10_000,
             setup: () => {
                 generateActors(2000);
@@ -83,7 +83,7 @@ const runner = new Runner({
             }
         }),
         new Test({
-            name: '4000 Actors (no sprites, no collisions)',
+            name: '4000 Actors (no collisions)',
             duration: 10_000,
             setup: () => {
                 generateActors(4000);
