@@ -49,11 +49,14 @@ export class Runner {
 
     public sampleMetrics(elapsed: number): void {
         const frameMetrics: Metric[] = [];
-        for (const sampler of this._samplers) {
-            frameMetrics.push(sampler.sample(this.engine));
+        const currentTest = this._currentTest
+        if (currentTest?.running) {
+            for (const sampler of this._samplers) {
+                frameMetrics.push(sampler.sample(currentTest.startTime));
+            }
+            this.metrics.push(frameMetrics);
+            this.metricEvents.emit(frameMetrics);
         }
-        this.metrics.push(frameMetrics);
-        this.metricEvents.emit(frameMetrics);
     }
 
     private _update(elapsed: number) {
@@ -64,6 +67,9 @@ export class Runner {
         }
 
         if (!this._currentTest?.running) {
+            for (const sampler of this._samplers) {
+                sampler.reset();
+            }
             this._currentTest?.start().then(() => {
                 this.sampleMetrics(this.now() - this._lastTime);
                 this._currentTest!.metrics = this.metrics;
@@ -86,12 +92,6 @@ export class Runner {
             console.log("[Tests Complete]");
             this._currentTest = null;
             this.testChanged.emit(null);
-            // for (const test of this._tests) {
-            //     console.log(`[Test: ${test.name}] Results:`);
-            //     for (const metric of test.metricSummary) {
-            //         console.log(`[${metric.name}]: ${metric.value}`);
-            //     }
-            // }
             this.stop();
         }
     }

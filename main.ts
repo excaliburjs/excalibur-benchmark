@@ -2,28 +2,35 @@ import { Runner } from "./runner";
 import * as d3 from 'd3';
 import { Test, ExcaliburFpsSampler } from "./test";
 import * as ex from 'excalibur';
+import playerSrc from './player.png'
 
 const resultsElement = document.getElementById('graph') as HTMLDivElement;
 const currentTest = document.getElementById('currentTest') as HTMLParagraphElement;
 const start = document.getElementById('start') as HTMLButtonElement;
-
 let game = new ex.Engine({canvasElementId: 'game', width: 600, height: 400});
 game.start();
 
 let random = new ex.Random(1234);
+// const graphic = new ex.Rectangle({
+//     width: 10,
+//     height: 10,
+//     color: ex.Color.Red
+// });
+const image = new ex.ImageSource(playerSrc);
+image.load();
+const graphic = image.toSprite();
+
 const generateActors = (quantity: number) => {
     for (let i = 0; i < quantity; i++) {
         const actor = new ex.Actor({
             pos: new ex.Vector(game.halfDrawWidth, game.halfDrawHeight),
-            width: 10,
-            height: 10,
             collisionType: ex.CollisionType.PreventCollision,
             color: new ex.Color(random.integer(0, 255), random.integer(0, 255), random.integer(0, 255)),
-            rx: random.floating(-2, 2),
+            angularVelocity: random.floating(-2, 2),
             vel: new ex.Vector(ex.Util.randomInRange(-100, 100, random), ex.Util.randomInRange(-100, 100, random))
         });
-        // actor.traits = [];
-        (actor.body.collider as any)._shape.recalc = () => {};
+        actor.removeComponent(actor.collider, true);
+        actor.graphics.use(graphic);
         game.add(actor);
     }
 };
@@ -31,17 +38,17 @@ const generateActors = (quantity: number) => {
 const runner = new Runner({
     engine: game,
     sampleInterval: 100,
-    samplers: [new ExcaliburFpsSampler()],
+    samplers: [new ExcaliburFpsSampler(game)],
     tests: [
         new Test({
             name: '100 Actors (no sprites, no collisions)',
-            duration: 20000,
+            duration: 5_000,
             setup: () => {
                 generateActors(100);
                 return Promise.resolve();
             },
             cleanUp: () => {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     game.currentScene.actors.forEach(a => game.currentScene.remove(a));
                     resolve();
                 })
@@ -49,13 +56,13 @@ const runner = new Runner({
         }),
         new Test({
             name: '1000 Actors (no sprites, no collisions)',
-            duration: 10000,
+            duration: 10_000,
             setup: () => {
                 generateActors(1000);
                 return Promise.resolve();
             },
             cleanUp: () => {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     game.currentScene.actors.forEach(a => game.currentScene.remove(a));
                     resolve();
                 })
@@ -63,13 +70,13 @@ const runner = new Runner({
         }),
         new Test({
             name: '2000 Actors (no sprites, no collisions)',
-            duration: 10000,
+            duration: 10_000,
             setup: () => {
                 generateActors(2000);
                 return Promise.resolve();
             },
             cleanUp: () => {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     game.currentScene.actors.forEach(a => game.currentScene.remove(a));
                     resolve();
                 })
@@ -77,13 +84,13 @@ const runner = new Runner({
         }),
         new Test({
             name: '4000 Actors (no sprites, no collisions)',
-            duration: 10000,
+            duration: 10_000,
             setup: () => {
                 generateActors(4000);
                 return Promise.resolve();
             },
             cleanUp: () => {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     game.currentScene.actors.forEach(a => game.currentScene.remove(a));
                     resolve();
                 })
@@ -91,7 +98,7 @@ const runner = new Runner({
         }),
         new Test({
             name: 'Idle with no Actors',
-            duration: 10000,
+            duration: 10_000,
             setup: () => {
                 return Promise.resolve();
             }
@@ -116,7 +123,7 @@ runner.testCompleted.on(test => {
 
     for (const metric of test.metricSummary) {
        const result = document.createElement('div');
-       result.innerText = `[${metric.name}]: ${metric.value}`
+       result.innerText = `[${metric.name}]: ${metric.value.toFixed(2)}`
        results.appendChild(result);
     }
 
@@ -127,18 +134,21 @@ runner.testCompleted.on(test => {
     const margin = 50;
 
     const xScale = d3.scaleLinear()
-        .domain([0, test.metrics.length - 1])
+        .domain([0, test.duration/1000])
         .range([0, width]);
     
     const yScale = d3.scaleLinear()
         .domain([0, 100])
         .range([height, 0]);
 
-    const line = d3.line<{y: number}>()
-        .x((d, i) => xScale(i))
-        .y(d => yScale(d.y));
+    const dataset = test.metrics.map(m => ({
+        x: (m.find(m => m.name === 'fps')!.time ?? 0) / 1000,
+        y: m.find(m => m.name === 'fps')!.value
+    }));
 
-    const dataset = test.metrics.map(m => ({ y: m.find(m => m.name === 'fps')!.value }));
+    const line = d3.line<{x: number, y: number}>()
+        .x((d, i) => xScale(d.x))
+        .y(d => yScale(d.y));
 
     const svg = d3.select("#graph")
         .append("svg")
@@ -155,9 +165,9 @@ runner.testCompleted.on(test => {
     svg.append("text")
         .attr("transform",
               "translate(" + (width/2) + " ," + 
-                             (height + 20) + ")")
+                             (height + 40) + ")")
         .style("text-anchor", "middle")
-        .text("Time");
+        .text("Time (seconds)");
 
     svg.append("g")
         .attr("class", "y axis")
@@ -181,7 +191,7 @@ runner.testCompleted.on(test => {
         .data(dataset)
       .enter().append("circle") // Uses the enter().append() method
         .attr("class", "dot") // Assign a class for styling
-        .attr("cx", function(d, i) { return xScale(i) })
+        .attr("cx", function(d, i) { return xScale((d.x ?? 0)) })
         .attr("cy", function(d) { return yScale(d.y) })
         .attr("r", 5)
 
@@ -190,66 +200,3 @@ runner.testCompleted.on(test => {
 start.addEventListener('click', () => {
     runner.start();
 });
-
-// set the dimensions and margins of the graph
-// const margin = {top: 10, right: 30, bottom: 30, left: 60},
-// width = 460 - margin.left - margin.right,
-// height = 400 - margin.top - margin.bottom;
-
-// // TODO charting should be a separate file/type
-// append the svg object to the body of the page
-// const graph = d3.select("#graph")
-// .append("svg")
-// .attr("width", width + margin.left + margin.right)
-// .attr("height", height + margin.top + margin.bottom)
-// .append("g")
-// .attr("transform",
-//     "translate(" + margin.left + "," + margin.top + ")");
-
-// // // Add the line
-// graph.append("path")
-//     .datum(runner.stats)
-//     .attr("fill", "none")
-//     .attr("stroke", "steelblue")
-//     .attr("stroke-width", 1.5)
-
-// const extent = d3.extent(runner.stats.stats, (d) => {
-//     return d!.timestamp;
-// }) as [number, number];
-
-// const x = d3.scaleLinear()
-//     .domain(extent)
-//     .range([ 0, width ]);
-// graph.append("g")
-//     .attr("transform", "translate(0," + height + ")")
-//     .call(d3.axisBottom(x));
-
-//   // Add Y axis
-// const y = d3.scaleLinear()
-//     .domain([0, d3.max(runner.stats.stats, function(d) { return (+d.fps as any); })])    
-//     .range([ height, 0 ]);
-// graph.append("g")
-//     .call(d3.axisLeft(y));
-
-// const line = d3.line<Stat>()
-//     .x(function(d) {
-//         return x(d.timestamp || 0)
-//     })
-//     .y(function(d) {
-//         return y(d.fps)
-//     })
-
-// graph.append("path")
-//     .datum(runner.stats.stats)
-//     .attr("fill", "none")
-//     .attr("stroke", "steelblue")
-//     .attr("stroke-width", 1.5)
-//     .attr("d", line);
-
-// setInterval(() => {
-//     fps.innerText = runner.stats.avg.fps.toFixed(2);
-//     frameDuration.innerText = runner.stats.avg.frameDuration.toFixed(2);
-//     memory.innerText = runner.stats.avg.memory.toFixed(2);
-//     currentTest.innerText = runner.currentTest?.name ?? 'Not running';
-
-// }, 100)

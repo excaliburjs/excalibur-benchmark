@@ -9,21 +9,50 @@ export interface TestOptions {
 export interface Metric {
     name: string;
     value: number;
+    time?: number;
 }
 
 export interface MetricSampler {
-    sample(engine: ex.Engine): Metric;
+    sample(startTime: number): Metric;
+    reset(): void;
 }
 
 export class ExcaliburFpsSampler implements MetricSampler {
-    constructor() {}
+    _beginTime = 0;
+    _prevTime = 0;
+    _frames = 0;
+    _fps = 60;
+    _engine: ex.Engine;
+    _samplePeriod = 100;
+    constructor(engine: ex.Engine) {
+        this._engine = engine;
+        engine.on('preframe', () => {
+            this._beginTime = performance.now();
+        });
 
-    public sample(engine: ex.Engine): Metric {
-        const fps = engine.stats.currFrame.fps;
-        // if (fps > 60) {
-        //     console.warn('FPS TOO HIGH', fps);
-        // }
-        return { name: 'fps', value: (fps === 1000 ? 0 : fps) };
+        engine.on('postdraw', () => {
+            this._frames++;
+            const time = performance.now();
+
+            if (time >= this._prevTime + this._samplePeriod) {
+                this._fps = ( this._frames * 1000 ) / ( time - this._prevTime )
+                this._prevTime = time;
+                this._frames = 0;
+            }
+        });
+    }
+
+    public reset() {
+        this._beginTime = performance.now();
+        this._prevTime = performance.now();
+        this._frames = 0;
+        this._fps = 60;
+    }
+
+    public sample(startTime: number): Metric {
+        return { name: 'fps', value: this._fps, time: performance.now() - startTime };
+        // const fps = this._engine.stats.currFrame.fps;
+        // return { name: 'fps', value: (fps === 1000 ? 0 : fps), time: performance.now() - startTime };
     }
 }
 
@@ -32,7 +61,11 @@ export class Test {
     private static _ID = 0;
     public readonly id = Test._ID++;
     public name: string;
+    public get duration() {
+        return this._duration;
+    }
     private _duration: number = 100;
+    private _startTime: number = 0;
     private _setup: () => Promise<any>;
     private _cleanUp: () => Promise<any>;
     private _running: boolean = false;
@@ -47,6 +80,10 @@ export class Test {
         return this._setupComplete;
     }
 
+    public get startTime() {
+        return this._startTime;
+    }
+
     constructor(options: TestOptions) {
         this._setup = options.setup;
         this._cleanUp = options.cleanUp ?? (() => { return Promise.resolve() });
@@ -59,15 +96,17 @@ export class Test {
         const testStartTime = performance.now();
         this._running = true;
         this._setupComplete = false;
-
         
         return this._setup().then(() => {
             const currentDuration = performance.now() - testStartTime;
             console.log(`[Test Setup Took]: ${currentDuration} msecs`);
             const timeleft = currentDuration < this._duration ? this._duration - currentDuration : 0;
             this._setupComplete = true;
-            return new Promise(resolve => {
-                setTimeout(resolve, timeleft)
+            this._startTime = performance.now();
+            return new Promise<void>(resolve => {
+                setTimeout(() => {
+                    resolve();
+                }, timeleft)
             });
         }).then(() => {
             const testEndTime = performance.now();
