@@ -2,6 +2,8 @@ import { Runner } from "./runner";
 import * as d3 from 'd3';
 import { Test, ExcaliburFpsSampler } from "./test";
 import * as ex from 'excalibur';
+// import * as ex24 from 'excalibur-v24';
+// import * as ex25 from 'excalibur-v25';
 import playerSrc from './player.png'
 
 const resultsElement = document.getElementById('graph') as HTMLDivElement;
@@ -11,29 +13,66 @@ let game = new ex.Engine({canvasElementId: 'game', width: 600, height: 400});
 game.start();
 
 let random = new ex.Random(1234);
-// const graphic = new ex.Rectangle({
-//     width: 10,
-//     height: 10,
-//     color: ex.Color.Red
-// });
-const image = new ex.ImageSource(playerSrc);
-image.load();
-const graphic = image.toSprite();
+let generateActors: (quantity: number) => void;
 
-const generateActors = (quantity: number) => {
-    for (let i = 0; i < quantity; i++) {
-        const actor = new ex.Actor({
-            pos: new ex.Vector(game.halfDrawWidth, game.halfDrawHeight),
-            collisionType: ex.CollisionType.PreventCollision,
-            color: new ex.Color(random.integer(0, 255), random.integer(0, 255), random.integer(0, 255)),
-            angularVelocity: random.floating(-2, 2),
-            vel: new ex.Vector(ex.Util.randomInRange(-100, 100, random), ex.Util.randomInRange(-100, 100, random))
-        });
-        actor.removeComponent(actor.collider, true);
-        actor.graphics.use(graphic);
-        game.add(actor);
-    }
-};
+let v0_24_5 = false;
+if (v0_24_5) {
+    // @ts-ignore
+    const image = new ex.Texture(playerSrc);
+    image.load();
+    
+    // @ts-ignore
+    const sprite = image.asSprite();
+
+    generateActors = (quantity: number) => {
+        for (let i = 0; i < quantity; i++) {
+            // @ts-ignore
+            const actor = new ex.Actor({
+                pos: new ex.Vector(game.halfDrawWidth, game.halfDrawHeight),
+                collisionType: ex.CollisionType.PreventCollision,
+                color: new ex.Color(random.integer(0, 255), random.integer(0, 255), random.integer(0, 255)),
+                // @ts-ignore
+                rx: random.floating(-2, 2),
+                vel: new ex.Vector(ex.Util.randomInRange(-100, 100, random), ex.Util.randomInRange(-100, 100, random))
+            });
+            
+            // @ts-ignore
+            actor.traits = [];
+            
+            // @ts-ignore
+            actor.addDrawing(sprite);
+            game.add(actor);
+        }
+    };
+} else {
+    // @ts-ignore
+    const rectangle = new ex.Rectangle({
+        width: 10,
+        height: 10,
+        color: ex.Color.Red
+    });
+    // @ts-ignore
+    const image = new ex.ImageSource(playerSrc);
+    image.load();
+    const graphic = image.toSprite();
+    generateActors = (quantity: number) => {
+        for (let i = 0; i < quantity; i++) {
+            // @ts-ignore
+            const actor = new ex.Actor({
+                pos: new ex.Vector(game.halfDrawWidth, game.halfDrawHeight),
+                collisionType: ex.CollisionType.PreventCollision,
+                color: new ex.Color(random.integer(0, 255), random.integer(0, 255), random.integer(0, 255)),
+                angularVelocity: random.floating(-2, 2),
+                vel: new ex.Vector(ex.Util.randomInRange(-100, 100, random), ex.Util.randomInRange(-100, 100, random))
+            });
+            // @ts-ignore
+            actor.removeComponent(actor.collider, true);
+            // @ts-ignore
+            actor.graphics.use(graphic);
+            game.add(actor);
+        }
+    };
+}
 
 const runner = new Runner({
     engine: game,
