@@ -5,6 +5,7 @@ module.exports = (version) => ({
   mode: 'development',
   devtool: 'source-map',
   entry: './main.ts',
+  target: ['web', 'es2020'],
   output: {
     path: path.resolve(__dirname, 'build/dist'),
     filename: 'excalibur-benchmark.js',
