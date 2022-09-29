@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@types/d3": "5.7.2",
-    "d3": "5.15.0",
+    "d3": "7.6.1",
     "excalibur": "0.25.0-alpha.242",
     "excalibur-v24": "npm:excalibur@0.24.5",
     "excalibur-v25": "npm:excalibur@0.25.0-alpha.242",
