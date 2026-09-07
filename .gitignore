@@ -1,4 +1,5 @@
-node_modules
-*.js
-build/dist/
-!webpack.config.js
+node_modules/
+harness/dist/
+.engines/
+results/
+*.log
