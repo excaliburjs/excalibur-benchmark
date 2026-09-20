@@ -66,6 +66,8 @@ async function openHarness(browser, serverUrl, engineKey, headed) {
       errors.push(m.text());
     }
   });
+  const harnessWithEngine = `${serverUrl}/?engine=/engines/${engineKey}.js`;
+  console.log('Harness url:', harnessWithEngine);
   await page.goto(`${serverUrl}/?engine=/engines/${engineKey}.js`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__bench && (window.__bench.ready || window.__bench.error), null, { timeout: 60_000 });
   const state = await page.evaluate(() => ({ ready: window.__bench.ready, error: window.__bench.error, version: window.__bench.engineVersion }));
@@ -116,7 +118,13 @@ async function runCommand(argv) {
   log(`baseline:  ${engines.baseline.spec} -> ${engines.baseline.file}`);
   log(`candidate: ${engines.candidate.spec} -> ${engines.candidate.file}`);
 
-  const server = await createServer({ root: HARNESS_DIST, engines: { baseline: engines.baseline.file, candidate: engines.candidate.file } });
+  const server = await createServer({
+    root: HARNESS_DIST,
+    engines: { 
+      baseline: engines.baseline.file,
+      candidate: engines.candidate.file 
+    },
+  });
   const browser = await chromium.launch({ headless: !values.headed, args: CHROMIUM_ARGS[values.gl] });
   const results = {
     meta: {

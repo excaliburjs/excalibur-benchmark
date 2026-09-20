@@ -23,20 +23,31 @@ export interface BenchApi {
 }
 
 function loadEngine(url: string): Promise<Ex> {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = url;
-    script.onload = () => {
-      const ex = (window as unknown as { ex?: Ex }).ex;
-      if (ex) {
-        resolve(ex);
-      } else {
-        reject(new Error(`${url} loaded but did not define the global "ex", is it the UMD bundle (build/dist/excalibur.js)?`));
-      }
-    };
-    script.onerror = () => reject(new Error(`failed to load engine bundle ${url}`));
-    document.head.appendChild(script);
+  return import(/* @vite-ignore */url).then(ex => {
+    ((window as any).ex = ex as any);
+    return ex;
   });
+  // switching to esm only
+  // return new Promise((resolve, reject) => {
+  //   const script = document.createElement('script');
+  //   script.src = url;
+  //   script.onload = () => {
+  //     let ex = (window as unknown as { ex?: Ex }).ex;
+  //     if (!ex) {
+  //       resolve(import(/* @vite-ignore */url).then(ex => {
+  //         ((window as any).ex = ex as any);
+  //         return ex;
+  //       }));
+  //     }
+  //     if (ex) {
+  //       resolve(ex);
+  //     } else {
+  //       reject(new Error(`${url} loaded but did not define the global "ex", is it the UMD bundle (build/dist/excalibur.js)?`));
+  //     }
+  //   };
+  //   script.onerror = () => reject(new Error(`failed to load engine bundle ${url}`));
+  //   document.head.appendChild(script);
+  // });
 }
 
 const status = document.getElementById('status') as HTMLDivElement;
@@ -127,7 +138,7 @@ async function main() {
   const engineUrl = new URLSearchParams(location.search).get('engine');
   if (!engineUrl) {
     status.innerHTML =
-      'No engine specified. Open this page with <code>?engine=&lt;url to excalibur.js UMD bundle&gt;</code>, ' +
+      'No engine specified. Open this page with <code>?engine=&lt;url to excalibur.js bundle&gt;</code>, ' +
       'or use <code>node bench.mjs run</code> for headless A/B comparisons.';
     api.error = 'no engine specified';
     return;
