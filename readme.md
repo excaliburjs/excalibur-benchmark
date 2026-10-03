@@ -29,6 +29,9 @@ node bench.mjs run \
   --baseline npm:excalibur@latest \
   --repeat 3 --out results/results.json --charts results/charts
 
+# if installed
+excalibur-bench run --candidate build/esm/excalibur.js --baseline npm:excalibur@latest --repeat 1 --tests actors-1000
+
 # re-render a report from a results file (markdown for GitHub job summaries / PR comments)
 node bench.mjs report results/results.json --markdown --warn 20 --charts results/charts
 
@@ -38,6 +41,16 @@ node bench.mjs run ... --tests stack-realistic-300-settle,arcade-1000-bouncing -
 
 Engine specs accepted by `--candidate`/`--baseline`: a path to a UMD bundle, `npm:<package spec>` (fetched with
 `npm pack` into `.engines/`), or an `http(s)://` URL.
+
+### Headed mode
+
+You can test locally in a browser using the headless mode
+
+`npm run dev`
+
+http://localhost:5173/?engine=/@fs/home/erik/projects/excalibur-benchmark/.engines/excalibur@latest/package/build/esm/excalibur.js
+
+This will load the local bundle off the filesystem to whatever version you want
 
 ### Software vs hardware GL
 
@@ -59,6 +72,12 @@ asynchronously; without the sync the timer would only see the CPU side).
 
 Interactive page: `npm run dev` then open `http://localhost:5173/?engine=/@fs/<absolute path>/build/dist/excalibur.js`
 (or any URL serving a bundle), pick a test and mode, and charts are rendered inline.
+
+### In the Excalibur CI
+
+The Excalibur repo runs this tool on every PR and on pushes to main (`.github/workflows/benchmark.yml`). Collaborators can
+re-run it on a PR by commenting `/benchmark`, optionally with `--baseline npm:excalibur@0.33.0-alpha.124 --tests actors-1000
+--repeat 5`, which is the quickest way to bisect a regression across published alphas.
 
 ## Scenarios
 
