@@ -3,6 +3,8 @@
 Deterministic, headless performance scenarios for [Excalibur](https://excaliburjs.com) plus a CLI that runs them against
 two engine builds and compares the results. Used by the Excalibur CI to compare every branch against the latest npm release.
 
+`excalibur-bench run --candidate ..\Excalibur\build\esm\excalibur.js --baseline npm:excalibur@latest --repeat 1 --tests actors-1000`
+
 ## How it works
 
 - `harness/` is a static page that loads an Excalibur **UMD bundle** (`build/dist/excalibur.js`) at runtime via `?engine=<url>`,

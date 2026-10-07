@@ -3,3 +3,4 @@ harness/dist/
 .engines/
 results/
 *.log
+/build/dist
