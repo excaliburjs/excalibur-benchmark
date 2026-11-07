@@ -65,6 +65,20 @@ export function summarize(samples: number[]) {
 const CANVAS_WIDTH = 320;
 const CANVAS_HEIGHT = 240;
 
+/**
+ * Pre-1.0 releases (e.g. v0.32.0) are pinned to the DynamicTree broadphase, 1.x engines keep their own default.
+ * Engines without `SpatialPartitionStrategy` (before v0.29) only have the dynamic tree anyway
+ */
+function withSpatialPartition(ex: Ex, options: Record<string, unknown>): Record<string, unknown> {
+  const major = Number(String(ex.EX_VERSION ?? '').split('.')[0]);
+  const dynamicTree = ex.SpatialPartitionStrategy?.DynamicTree;
+  if (major !== 0 || dynamicTree === undefined || options.physics === false) {
+    return options;
+  }
+  const physics = typeof options.physics === 'object' && options.physics ? (options.physics as Record<string, unknown>) : {};
+  return { ...options, physics: { ...physics, spatialPartition: dynamicTree } };
+}
+
 function createEngine(ex: Ex, test: BenchTest) {
   const stage = document.getElementById('stage') ?? document.body;
   const canvas = document.createElement('canvas');
@@ -77,7 +91,7 @@ function createEngine(ex: Ex, test: BenchTest) {
     suppressPlayButton: true,
     suppressHiDPIScaling: true,
     suppressConsoleBootMessage: true,
-    ...(test.engineOptions?.(ex) ?? {})
+    ...withSpatialPartition(ex, test.engineOptions?.(ex) ?? {})
   });
   return { engine, canvas };
 }

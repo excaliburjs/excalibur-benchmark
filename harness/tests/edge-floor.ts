@@ -18,7 +18,8 @@ export const edgeFloor = defineTest({
       new ex.Actor({
         name: 'floor',
         pos: ex.vec(0, 300),
-        collider: ex.Shape.Edge(ex.vec(-2000, 0), ex.vec(2000, 0)),
+        // v1 renamed ex.Shape -> ex.Colliders, baseline releases only have Shape
+        collider: (ex.Colliders ?? ex.Shape).Edge(ex.vec(-2000, 0), ex.vec(2000, 0)),
         collisionType: ex.CollisionType.Fixed
       })
     );
