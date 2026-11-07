@@ -26,22 +26,25 @@ export function realisticStackOptions(ex: Ex, fixedUpdateFps = 30) {
  * @param wallHeight how far up from the floor the walls reach
  */
 export function addEdgeBox({ ex, engine }: BenchContext, halfWidth: number, floorY: number, wallHeight: number) {
+  // v1 renamed the collider factories `ex.Shape` -> `ex.Colliders` and removed `Shape`;
+  // baseline releases before v1 only have `Shape`, so feature-detect the factory
+  const colliders = ex.Colliders ?? ex.Shape;
   const floor = new ex.Actor({
     name: 'floor',
     pos: ex.vec(0, floorY),
-    collider: ex.Shape.Edge(ex.vec(-halfWidth, 0), ex.vec(halfWidth, 0)),
+    collider: colliders.Edge(ex.vec(-halfWidth, 0), ex.vec(halfWidth, 0)),
     collisionType: ex.CollisionType.Fixed
   });
   const left = new ex.Actor({
     name: 'left-wall',
     pos: ex.vec(-halfWidth, floorY),
-    collider: ex.Shape.Edge(ex.vec(0, -wallHeight), ex.vec(0, 0)),
+    collider: colliders.Edge(ex.vec(0, -wallHeight), ex.vec(0, 0)),
     collisionType: ex.CollisionType.Fixed
   });
   const right = new ex.Actor({
     name: 'right-wall',
     pos: ex.vec(halfWidth, floorY),
-    collider: ex.Shape.Edge(ex.vec(0, -wallHeight), ex.vec(0, 0)),
+    collider: colliders.Edge(ex.vec(0, -wallHeight), ex.vec(0, 0)),
     collisionType: ex.CollisionType.Fixed
   });
   engine.add(floor);
